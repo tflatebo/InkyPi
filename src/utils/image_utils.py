@@ -6,6 +6,7 @@ import logging
 import hashlib
 import tempfile
 import subprocess
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -120,12 +121,15 @@ def take_screenshot(target, dimensions, timeout_ms=None):
             f"--window-size={dimensions[0]},{dimensions[1]}",
             "--disable-dev-shm-usage",
             "--disable-gpu",
-            "--use-gl=swiftshader",
             "--hide-scrollbars",
-            "--in-process-gpu",
             "--js-flags=--jitless",
             "--disable-zero-copy",
             "--disable-gpu-memory-buffer-compositor-resources",
+            "--disable-gpu-compositing",
+            "--disable-accelerated-2d-canvas",
+            "--disable-gpu-rasterization",
+            "--disable-oop-rasterization",
+            "--disable-features=UseSkiaRenderer",
             "--disable-extensions",
             "--disable-plugins",
             "--mute-audio",
@@ -133,7 +137,16 @@ def take_screenshot(target, dimensions, timeout_ms=None):
         ]
         if timeout_ms:
             command.append(f"--timeout={timeout_ms}")
+        start_time = time.monotonic()
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        duration_s = time.monotonic() - start_time
+        logger.info(
+            "Screenshot rendered in %.2fs | target: %s | size: %sx%s",
+            duration_s,
+            target,
+            dimensions[0],
+            dimensions[1],
+        )
 
         # Check if the process failed or the output file is missing
         if result.returncode != 0 or not os.path.exists(img_file_path):

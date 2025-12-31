@@ -111,7 +111,15 @@ class RefreshTask:
                             logger.error(f"Plugin config not found for '{refresh_action.get_plugin_id()}'.")
                             continue
                         plugin = get_plugin_instance(plugin_config)
+                        start_time = time.monotonic()
                         image = refresh_action.execute(plugin, self.device_config, current_dt)
+                        duration_s = time.monotonic() - start_time
+                        logger.info(
+                            "Plugin image generated in %.2fs | plugin_id: %s | refresh_type: %s",
+                            duration_s,
+                            refresh_action.get_plugin_id(),
+                            refresh_action.get_refresh_info().get("refresh_type", "Unknown"),
+                        )
                         image_hash = compute_image_hash(image)
 
                         refresh_info = refresh_action.get_refresh_info()
