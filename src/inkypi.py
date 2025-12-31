@@ -39,18 +39,19 @@ logger = logging.getLogger(__name__)
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='InkyPi Display Server')
 parser.add_argument('--dev', action='store_true', help='Run in development mode')
+parser.add_argument('--port', type=int, help='Port to bind the web server')
 args = parser.parse_args()
 
 # Set development mode settings
 if args.dev:
     Config.config_file = os.path.join(Config.BASE_DIR, "config", "device_dev.json")
     DEV_MODE = True
-    PORT = 8080
-    logger.info("Starting InkyPi in DEVELOPMENT mode on port 8080")
+    PORT = args.port or 8080
+    logger.info(f"Starting InkyPi in DEVELOPMENT mode on port {PORT}")
 else:
     DEV_MODE = False
-    PORT = 80
-    logger.info("Starting InkyPi in PRODUCTION mode on port 80")
+    PORT = args.port or 80
+    logger.info(f"Starting InkyPi in PRODUCTION mode on port {PORT}")
 logging.getLogger('waitress.queue').setLevel(logging.ERROR)
 app = Flask(__name__)
 template_dirs = [

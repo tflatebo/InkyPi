@@ -46,6 +46,12 @@ python src/inkypi.py --dev           # Start development server
 deactivate                           # Exit virtual environment
 ```
 
+Defaults: dev mode uses port 8080, production uses port 80. To use a different port, pass `--port`:
+
+```bash
+python src/inkypi.py --dev --port 9090
+```
+
 ## Development Tips
 
 1. **Check rendered output**: Images are saved to `mock_display_output/`
