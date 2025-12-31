@@ -25,6 +25,7 @@
 
     <script>
         const pluginSettings = {{ plugin_settings | tojson if plugin_settings else {} }};
+        const deviceSettings = {{ device_settings | tojson if device_settings else {} }};
         const pluginInstanceName ='{{ plugin_instance }}';
         const loadPluginSettings = pluginInstanceName != '';
         const styleSettings = {{ style_settings | default(false) | tojson }};

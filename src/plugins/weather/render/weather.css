@@ -25,6 +25,14 @@
   container-type: size;
 }
 
+.header.no-title {
+  justify-content: center;
+}
+
+.header.no-title .current-date {
+  font-size: min(45cqh, 8cqi);
+}
+
 .last-refresh {
   position: absolute;
   top: 0.5dvh;

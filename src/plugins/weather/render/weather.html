@@ -9,8 +9,10 @@
   <div class="last-refresh">Last refresh: {{ last_refresh_time }}</div>
   {% endif %}
   <!-- Current Date -->
-  <div class="header">
+  <div class="header{% if not title %} no-title{% endif %}">
+    {% if title %}
     <div class="title">{{ title }}</div>
+    {% endif %}
     <div class="current-date">{{ current_date }}</div>
   </div>
 

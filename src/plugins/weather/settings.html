@@ -36,6 +36,9 @@
         <input type="radio" id="title-location" name="titleSelection" value="location">
         <label for="title-location">Location</label>
 
+        <input type="radio" id="title-none" name="titleSelection" value="none">
+        <label for="title-none">None</label>
+
         <input type="radio" id="title-custom" name="titleSelection" value="custom">
         <label for="title-custom">Custom</label>
         <input type="text" id="customTitle" name="customTitle" class="form-input" placeholder="Type something..." />
@@ -146,6 +149,8 @@
     function updateTitleOptions(provider) {
         const titleLocationRadio = document.getElementById('title-location');
         const titleLocationLabel = document.querySelector('label[for="title-location"]');
+        const titleNoneRadio = document.getElementById('title-none');
+        const titleNoneLabel = document.querySelector('label[for="title-none"]');
         const titleCustomRadio = document.getElementById('title-custom');
         const customTitleInput = document.getElementById('customTitle');
         const titleTimeZone = document.getElementById('weatherTimeZone');
@@ -161,10 +166,12 @@
             titleTimeZoneLabel.style.display = 'none';
             titleTimeZone.disabled = true;
 
-            // Select and enable "Custom"
-            titleCustomRadio.checked = true;
+            // Allow "None" or "Custom"
+            titleNoneRadio.disabled = false;
             titleCustomRadio.disabled = false;
-            customTitleInput.disabled = false;
+            if (titleLocationRadio.checked) {
+                titleNoneRadio.checked = true;
+            }
 
             // Hide API Key required label for Open-Meteo
             if (apiKeyLabel) apiKeyLabel.style.display = 'none';
@@ -173,9 +180,11 @@
             titleLocationRadio.style.display = '';
             titleLocationLabel.style.display = '';
             titleLocationRadio.disabled = false;
+            titleNoneRadio.style.display = '';
+            titleNoneLabel.style.display = '';
+            titleNoneRadio.disabled = false;
 
             titleCustomRadio.disabled = false;
-            customTitleInput.disabled = false;
 
             titleTimeZone.style.display = '';
             titleTimeZoneLabel.style.display = '';
@@ -183,6 +192,15 @@
 
             // Show API Key required label for OpenWeatherMap
             if (apiKeyLabel) apiKeyLabel.style.display = '';
+        }
+        updateTitleInputState();
+    }
+
+    function updateTitleInputState() {
+        const selection = document.querySelector('input[name="titleSelection"]:checked')?.value;
+        const customTitleInput = document.getElementById('customTitle');
+        if (customTitleInput) {
+            customTitleInput.disabled = selection !== 'custom';
         }
     }
 
@@ -218,6 +236,7 @@
         let zoom = latitude && longitude ? 4.5 : 2.5;
         let selectedTitle = 'location';
         let weatherProvider = 'OpenMeteo';
+        const weatherDefaults = deviceSettings.weather_defaults || {};
         const metricDefaults = {
             displayMetricSunrise: true,
             displayMetricSunset: true,
@@ -246,6 +265,9 @@
             openModal('mapModal')
             setTimeout(() => {
                 if (!map) {
+                    latitude = +$latitude.value;
+                    longitude = +$longitude.value;
+                    zoom = latitude && longitude ? 4.5 : 2.5;
                     map = L.map('map').setView([latitude, longitude], zoom);
                     L.tileLayer(OSM_TILE_URL).addTo(map);
                     marker = L.marker([latitude, longitude], { draggable: true }).addTo(map);
@@ -265,8 +287,8 @@
         });
 
         if (loadPluginSettings) {
-            document.getElementById('latitude').value = pluginSettings.latitude;
-            document.getElementById('longitude').value = pluginSettings.longitude;
+            document.getElementById('latitude').value = pluginSettings.latitude ?? weatherDefaults.latitude ?? '';
+            document.getElementById('longitude').value = pluginSettings.longitude ?? weatherDefaults.longitude ?? '';
 
             document.getElementById('units').value = pluginSettings.units;
 
@@ -294,10 +316,10 @@
 
             applyMetricSettings(true);
             
-            selectedTitle = pluginSettings.titleSelection || 'location';
+            selectedTitle = pluginSettings.titleSelection ?? weatherDefaults.titleSelection ?? 'location';
             weatherProvider = pluginSettings.weatherProvider || 'OpenMeteo';
 
-            document.getElementById('customTitle').value = pluginSettings.customTitle || '';
+            document.getElementById('customTitle').value = pluginSettings.customTitle ?? weatherDefaults.customTitle ?? '';
         } else {
             // set default values
             document.getElementById('units').value = "imperial";
@@ -314,12 +336,28 @@
             document.getElementById('forecastDays').value = 7;
             document.getElementById('moonPhase').checked = false;
             document.getElementById('weatherTimeZone').value = "locationTimeZone";
+            if (weatherDefaults.latitude !== undefined) {
+                document.getElementById('latitude').value = weatherDefaults.latitude;
+            }
+            if (weatherDefaults.longitude !== undefined) {
+                document.getElementById('longitude').value = weatherDefaults.longitude;
+            }
+            if (weatherDefaults.titleSelection) {
+                selectedTitle = weatherDefaults.titleSelection;
+            }
+            if (weatherDefaults.customTitle) {
+                document.getElementById('customTitle').value = weatherDefaults.customTitle;
+            }
             applyMetricSettings(false);
         }
 
         document.getElementById('weatherProvider').value = weatherProvider;
         document.querySelector(`input[name="titleSelection"][value="${selectedTitle}"]`).checked = true;
+        document.querySelectorAll('input[name="titleSelection"]').forEach((radio) => {
+            radio.addEventListener('change', updateTitleInputState);
+        });
         updateTitleOptions(weatherProvider)
         toggleMetricOptions(document.getElementById('displayMetrics').checked);
+        updateTitleInputState();
     });
 </script>

@@ -6,6 +6,12 @@
         480
     ],
     "orientation": "horizontal",
+    "weather_defaults": {
+        "latitude": 44.8848,
+        "longitude": -93.2223,
+        "titleSelection": "location",
+        "customTitle": ""
+    },
     "playlist_config": {
         "playlists": [
             {
@@ -19,8 +25,8 @@
         "active_playlist": null
     },
     "refresh_info": {
-        "refresh_time": "2025-12-31T23:00:47.341821+00:00",
-        "image_hash": "415377a3206fd87cf7ee840dbac1035a5f03916d2a682dd00a4119fe8d9af8d5",
+        "refresh_time": "2025-12-31T23:18:20.735409+00:00",
+        "image_hash": "0c5e0aaa9559f8b812998d006dc709f510856d2e49fc6f3a6ffe25a0c0636a6e",
         "refresh_type": "Manual Update",
         "plugin_id": "weather"
     }

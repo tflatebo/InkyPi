@@ -69,17 +69,24 @@ class Weather(BasePlugin):
         return template_params
 
     def generate_image(self, settings, device_config):
-        lat = float(settings.get('latitude'))
-        long = float(settings.get('longitude'))
-        if not lat or not long:
+        defaults = device_config.get_config("weather_defaults", default={})
+        lat_value = settings.get('latitude', defaults.get('latitude'))
+        long_value = settings.get('longitude', defaults.get('longitude'))
+        if lat_value in [None, ""] or long_value in [None, ""]:
             raise RuntimeError("Latitude and Longitude are required.")
+        try:
+            lat = float(lat_value)
+            long = float(long_value)
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError("Latitude and Longitude must be valid numbers.") from exc
 
         units = settings.get('units')
         if not units or units not in ['metric', 'imperial', 'standard']:
             raise RuntimeError("Units are required.")
 
         weather_provider = settings.get('weatherProvider', 'OpenWeatherMap')
-        title = settings.get('customTitle', '')
+        title_selection = settings.get('titleSelection', defaults.get('titleSelection', 'location'))
+        title = settings.get('customTitle', defaults.get('customTitle', ''))
 
         timezone = device_config.get_config("timezone", default="America/New_York")
         time_format = device_config.get_config("time_format", default="12h")
@@ -92,20 +99,44 @@ class Weather(BasePlugin):
                     raise RuntimeError("Open Weather Map API Key not configured.")
                 weather_data = self.get_weather_data(api_key, units, lat, long)
                 aqi_data = self.get_air_quality(api_key, lat, long)
-                if settings.get('titleSelection', 'location') == 'location':
+                if title_selection == 'location':
                     title = self.get_location(api_key, lat, long)
                 if settings.get('weatherTimeZone', 'locationTimeZone') == 'locationTimeZone':
                     logger.info("Using location timezone for OpenWeatherMap data.")
                     wtz = self.parse_timezone(weather_data)
-                    template_params = self.parse_weather_data(weather_data, aqi_data, wtz, units, time_format, lat)
+                    template_params = self.parse_weather_data(
+                        weather_data,
+                        aqi_data,
+                        wtz,
+                        units,
+                        time_format,
+                        lat,
+                        settings,
+                    )
                 else:
                     logger.info("Using configured timezone for OpenWeatherMap data.")
-                    template_params = self.parse_weather_data(weather_data, aqi_data, tz, units, time_format, lat)
+                    template_params = self.parse_weather_data(
+                        weather_data,
+                        aqi_data,
+                        tz,
+                        units,
+                        time_format,
+                        lat,
+                        settings,
+                    )
             elif weather_provider == "OpenMeteo":
                 forecast_days = 7
                 weather_data = self.get_open_meteo_data(lat, long, units, forecast_days + 1)
                 aqi_data = self.get_open_meteo_air_quality(lat, long)
-                template_params = self.parse_open_meteo_data(weather_data, aqi_data, tz, units, time_format, lat)
+                template_params = self.parse_open_meteo_data(
+                    weather_data,
+                    aqi_data,
+                    tz,
+                    units,
+                    time_format,
+                    lat,
+                    settings,
+                )
             else:
                 raise RuntimeError(f"Unknown weather provider: {weather_provider}")
 
@@ -113,6 +144,8 @@ class Weather(BasePlugin):
                 template_params.get("data_points", []),
                 settings
             )
+            if title_selection == 'none':
+                title = ''
             template_params['title'] = title
         except Exception as e:
             logger.error(f"{weather_provider} request failed: {str(e)}")
@@ -159,14 +192,18 @@ class Weather(BasePlugin):
             "Visibility": "displayMetricVisibility",
             "Air Quality": "displayMetricAirQuality"
         }
+        has_metric_settings = any(key in settings for key in metric_keys.values())
         filtered = []
         for data_point in data_points:
             key = metric_keys.get(data_point.get("label"))
-            if not key or self.is_setting_enabled(settings, key, True):
+            if not key or (not has_metric_settings):
+                filtered.append(data_point)
+                continue
+            if self.is_setting_enabled(settings, key, False):
                 filtered.append(data_point)
         return filtered
 
-    def parse_weather_data(self, weather_data, aqi_data, tz, units, time_format, lat):
+    def parse_weather_data(self, weather_data, aqi_data, tz, units, time_format, lat, settings):
         current = weather_data.get("current")
         dt = datetime.fromtimestamp(current.get('dt'), tz=timezone.utc).astimezone(tz)
         current_icon = current.get("weather")[0].get("icon")
@@ -187,12 +224,13 @@ class Weather(BasePlugin):
             "time_format": time_format
         }
         data['forecast'] = self.parse_forecast(weather_data.get('daily'), tz, current_suffix, lat)
-        data['data_points'] = self.parse_data_points(weather_data, aqi_data, tz, units, time_format)
+        data_points = self.parse_data_points(weather_data, aqi_data, tz, units, time_format)
+        data['data_points'] = self.filter_data_points(data_points, settings)
 
         data['hourly_forecast'] = self.parse_hourly(weather_data.get('hourly'), tz, time_format, units)
         return data
 
-    def parse_open_meteo_data(self, weather_data, aqi_data, tz, units, time_format, lat):
+    def parse_open_meteo_data(self, weather_data, aqi_data, tz, units, time_format, lat, settings):
         current = weather_data.get("current_weather", {})
         dt = datetime.fromisoformat(current.get('time')).astimezone(tz) if current.get('time') else datetime.now(tz)
         weather_code = current.get("weathercode", 0)
@@ -210,7 +248,8 @@ class Weather(BasePlugin):
         }
 
         data['forecast'] = self.parse_open_meteo_forecast(weather_data.get('daily', {}), tz, is_day, lat)
-        data['data_points'] = self.parse_open_meteo_data_points(weather_data, aqi_data, tz, units, time_format)
+        data_points = self.parse_open_meteo_data_points(weather_data, aqi_data, tz, units, time_format)
+        data['data_points'] = self.filter_data_points(data_points, settings)
         
         data['hourly_forecast'] = self.parse_open_meteo_hourly(weather_data.get('hourly', {}), tz, time_format)
         return data
