@@ -109,6 +109,10 @@ class Weather(BasePlugin):
             else:
                 raise RuntimeError(f"Unknown weather provider: {weather_provider}")
 
+            template_params["data_points"] = self.filter_data_points(
+                template_params.get("data_points", []),
+                settings
+            )
             template_params['title'] = title
         except Exception as e:
             logger.error(f"{weather_provider} request failed: {str(e)}")
@@ -133,6 +137,34 @@ class Weather(BasePlugin):
         if not image:
             raise RuntimeError("Failed to take screenshot, please check logs.")
         return image
+
+    def is_setting_enabled(self, settings, key, default=True):
+        if key not in settings:
+            return default
+        value = settings.get(key)
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.lower() == "true"
+        return bool(value)
+
+    def filter_data_points(self, data_points, settings):
+        metric_keys = {
+            "Sunrise": "displayMetricSunrise",
+            "Sunset": "displayMetricSunset",
+            "Wind": "displayMetricWind",
+            "Humidity": "displayMetricHumidity",
+            "Pressure": "displayMetricPressure",
+            "UV Index": "displayMetricUvIndex",
+            "Visibility": "displayMetricVisibility",
+            "Air Quality": "displayMetricAirQuality"
+        }
+        filtered = []
+        for data_point in data_points:
+            key = metric_keys.get(data_point.get("label"))
+            if not key or self.is_setting_enabled(settings, key, True):
+                filtered.append(data_point)
+        return filtered
 
     def parse_weather_data(self, weather_data, aqi_data, tz, units, time_format, lat):
         current = weather_data.get("current")

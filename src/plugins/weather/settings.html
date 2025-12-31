@@ -51,8 +51,48 @@
     </div>
 
     <div class="form-group">
-        <input type="checkbox" id="displayMetrics" name="displayMetrics" onclick="this.value=this.checked ? 'true' : 'false';">
+        <input type="checkbox" id="displayMetrics" name="displayMetrics" onclick="this.value=this.checked ? 'true' : 'false'; toggleMetricOptions(this.checked);">
         <span>Metrics</span>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricSunrise" name="displayMetricSunrise" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Sunrise</span>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricSunset" name="displayMetricSunset" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Sunset</span>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricWind" name="displayMetricWind" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Wind</span>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricHumidity" name="displayMetricHumidity" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Humidity</span>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricPressure" name="displayMetricPressure" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Pressure</span>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricUvIndex" name="displayMetricUvIndex" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>UV Index</span>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricVisibility" name="displayMetricVisibility" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Visibility</span>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricAirQuality" name="displayMetricAirQuality" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Air Quality</span>
     </div>
 
     <div class="form-group">
@@ -146,6 +186,24 @@
         }
     }
 
+    function toggleMetricOptions(isEnabled) {
+        const metricToggleIds = [
+            'displayMetricSunrise',
+            'displayMetricSunset',
+            'displayMetricWind',
+            'displayMetricHumidity',
+            'displayMetricPressure',
+            'displayMetricUvIndex',
+            'displayMetricVisibility',
+            'displayMetricAirQuality'
+        ];
+        metricToggleIds.forEach((id) => {
+            const checkbox = document.getElementById(id);
+            if (!checkbox) return;
+            checkbox.disabled = !isEnabled;
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
 
         const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -160,6 +218,27 @@
         let zoom = latitude && longitude ? 4.5 : 2.5;
         let selectedTitle = 'location';
         let weatherProvider = 'OpenMeteo';
+        const metricDefaults = {
+            displayMetricSunrise: true,
+            displayMetricSunset: true,
+            displayMetricWind: true,
+            displayMetricHumidity: true,
+            displayMetricPressure: true,
+            displayMetricUvIndex: true,
+            displayMetricVisibility: true,
+            displayMetricAirQuality: true
+        };
+        const applyMetricSettings = (usePluginSettings) => {
+            Object.entries(metricDefaults).forEach(([key, defaultValue]) => {
+                const rawValue = usePluginSettings && key in pluginSettings ? pluginSettings[key] : defaultValue;
+                const checked = rawValue === true || rawValue === "true";
+                const checkbox = document.getElementById(key);
+                if (checkbox) {
+                    checkbox.checked = checked;
+                    checkbox.value = checked ? "true" : "false";
+                }
+            });
+        };
 
         let map, marker;
 
@@ -212,6 +291,8 @@
             document.getElementById('moonPhase').value = pluginSettings.moonPhase;
 
             document.getElementById('weatherTimeZone').value = pluginSettings.weatherTimeZone;
+
+            applyMetricSettings(true);
             
             selectedTitle = pluginSettings.titleSelection || 'location';
             weatherProvider = pluginSettings.weatherProvider || 'OpenMeteo';
@@ -233,10 +314,12 @@
             document.getElementById('forecastDays').value = 7;
             document.getElementById('moonPhase').checked = false;
             document.getElementById('weatherTimeZone').value = "locationTimeZone";
+            applyMetricSettings(false);
         }
 
         document.getElementById('weatherProvider').value = weatherProvider;
         document.querySelector(`input[name="titleSelection"][value="${selectedTitle}"]`).checked = true;
         updateTitleOptions(weatherProvider)
+        toggleMetricOptions(document.getElementById('displayMetrics').checked);
     });
 </script>
