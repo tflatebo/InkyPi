@@ -59,6 +59,87 @@ python src/inkypi.py --dev --port 9090
 3. **Configuration**: Edit `src/config/device_dev.json` for display settings
 4. **Hot reload**: Restart server to see code changes
 
+## Generate Weather Image Without the Server
+
+Run this from the repo root to render the weather plugin directly to `mock_display_output/latest.png`:
+
+```bash
+python scripts/generate_weather_image.py
+```
+
+Common options:
+
+```bash
+python scripts/generate_weather_image.py --units metric --forecast-days 7 --display-forecast-precip
+python scripts/generate_weather_image.py --weather-provider OpenWeatherMap --no-display-graph --use-24h-time
+```
+
+Example with location/title and metric toggles:
+
+```bash
+python scripts/generate_weather_image.py \
+  --latitude 44.98 --longitude -93.27 \
+  --title-selection custom --custom-title "Home" \
+  --no-display-metric-humidity --no-display-metric-pressure
+```
+
+Example using common values:
+
+```bash
+python scripts/generate_weather_image.py \
+  --latitude 0.0 --longitude 0.0 \
+  --weather-provider OpenMeteo \
+  --units imperial \
+  --title-selection none \
+  --display-refresh-time \
+  --no-display-metric-icons \
+  --display-forecast-icons \
+  --display-forecast-precip \
+  --display-graph \
+  --display-rain \
+  --display-metrics \
+  --display-metric-sunrise \
+  --display-metric-sunset \
+  --display-metric-wind \
+  --display-metric-air-quality \
+  --no-display-metric-humidity \
+  --no-display-metric-pressure \
+  --no-display-metric-uv-index \
+  --no-display-metric-visibility
+```
+
+Full CLI argument example:
+
+```bash
+python scripts/generate_weather_image.py \
+  --latitude 44.8848 --longitude -93.2223 \
+  --weather-provider OpenWeatherMap \
+  --units imperial \
+  --title-selection custom --custom-title "Home" \
+  --forecast-days 7 \
+  --display-refresh-time \
+  --display-forecast \
+  --display-forecast-precip \
+  --display-forecast-icons \
+  --display-metric-icons \
+  --display-metrics \
+  --display-metric-sunrise \
+  --display-metric-sunset \
+  --display-metric-wind \
+  --display-metric-humidity \
+  --display-metric-pressure \
+  --display-metric-uv-index \
+  --display-metric-visibility \
+  --display-metric-air-quality \
+  --display-graph \
+  --display-rain \
+  --moon-phase \
+  --weather-time-zone locationTimeZone \
+  --use-24h-time
+```
+
+If you switch to OpenWeatherMap, make sure `OPEN_WEATHER_MAP_SECRET` is set in your environment or `.env` file.
+
 ## Testing Your Changes
 
 1. Configure a plugin through the web UI

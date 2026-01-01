@@ -25,9 +25,20 @@
         "active_playlist": null
     },
     "refresh_info": {
-        "refresh_time": "2026-01-01T20:43:29.767647+00:00",
-        "image_hash": "bb8207987d72bf2788a212cc9742f32d5f19110ec9de31a994436e72230739c2",
+        "refresh_time": "2026-01-01T15:04:38.236852-06:00",
+        "image_hash": "9663f2c27ac29a52549e6b1e771d823f1f47a738d3d81a2b3ad358518cf67a51",
         "refresh_type": "Manual Update",
         "plugin_id": "weather"
+    },
+    "inverted_image": null,
+    "log_system_stats": null,
+    "timezone": "US/Central",
+    "time_format": "24h",
+    "plugin_cycle_interval_seconds": 3600,
+    "image_settings": {
+        "saturation": 1.0,
+        "brightness": 1.0,
+        "sharpness": 1.0,
+        "contrast": 1.0
     }
 }

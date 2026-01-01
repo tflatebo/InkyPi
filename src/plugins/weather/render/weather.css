@@ -92,7 +92,6 @@
   text-align: center;
   align-content: end;
   position: relative;
-  height: 50%;
 }
 
 .temperature-unit {
@@ -274,14 +273,15 @@
   font-size: 13.2cqmin;
   text-align: center;
   position: relative;
-  line-height: 140%;
+  line-height: 100%;
+  gap: 2px;
 }
 
 .feels-like {
   font-size: 11cqmin;
   text-align: center;
   position: relative;
-  line-height: 140%;
+  line-height: 90%;
 }
 
 
