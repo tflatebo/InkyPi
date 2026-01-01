@@ -10,19 +10,20 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1dvh;
+  gap: 0;
   width: 100%;
   height: 100%;
   font-family: "Jost"
 }
 
 .header {
-  height: 15dvh;
+  height: 10dvh;
   width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: end;
   container-type: size;
+  margin-bottom: 0px;
 }
 
 .header.no-title {
@@ -31,20 +32,6 @@
 
 .header.no-title .current-date {
   font-size: min(45cqh, 8cqi);
-}
-
-.last-refresh {
-  position: absolute;
-  top: 0.5dvh;
-  right: 0.5dvw;
-  font-size: min(2dvh, 2vw);
-  text-align: right;
-  font-weight: bold;
-  padding: 0.3dvh 0.5dvw;
-}
-
-.weather-dashboard {
-  position: relative;
 }
 
 .title {
@@ -63,6 +50,8 @@
   align-content: end;
   width: 100%;
   line-height: 105%;
+  position: relative;
+  top: 0px;
 }
 
 .today-container {
@@ -82,6 +71,7 @@
   justify-content: center;
   width: 50%;
   padding: 0 2vw;
+  padding-bottom: 0px;
   height: 100%;
   overflow: hidden;
 }
@@ -98,7 +88,7 @@
 }
 
 .current-temp {
-  font-size: 45cqmin;
+  font-size: 49.5cqmin;
   text-align: center;
   align-content: end;
   position: relative;
@@ -182,6 +172,8 @@
   width: 100%;
   gap: 1.5dvw;
   overflow: hidden;
+  padding-top: 5px;
+  padding-bottom: 0px;
 }
 
 .forecast-day {
@@ -189,7 +181,6 @@
   flex-direction: column;
   align-items: center;
   padding: 1dvh 1vw;
-  border: 1px solid;
   border-radius: 1.2vw;
   min-width: 0;
   max-height: 100%;
@@ -228,7 +219,7 @@
   min-height: 0;
   min-width: 0;
   height: 100%;
-  font-size: min(3dvh, 2.5vw);
+  font-size: min(3.3dvh, 2.75vw);
 }
 
 .low .high {
@@ -239,6 +230,7 @@
   container-type: size;
   display: flex;
   flex-direction: column;
+  gap: 4px;
   height: 100%;
   flex: 1;
   width: 100%;
@@ -248,7 +240,8 @@
 
 .chart-container {
   width: 100%;
-  height: 16dvh;
+  height: 18dvh;
+  padding-bottom: 0px;
 }
 
 .separator {
@@ -278,14 +271,14 @@
 }
 
 .min-max {
-  font-size: 12cqmin;
+  font-size: 13.2cqmin;
   text-align: center;
   position: relative;
   line-height: 140%;
 }
 
 .feels-like {
-  font-size: 10cqmin;
+  font-size: 11cqmin;
   text-align: center;
   position: relative;
   line-height: 140%;

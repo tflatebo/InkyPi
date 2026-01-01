@@ -49,7 +49,7 @@ WEATHER_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lo
 AIR_QUALITY_URL = "http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={long}&appid={api_key}"
 GEOCODING_URL = "http://api.openweathermap.org/geo/1.0/reverse?lat={lat}&lon={long}&limit=1&appid={api_key}"
 
-OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={long}&hourly=temperature_2m,precipitation,precipitation_probability,relative_humidity_2m,surface_pressure,visibility&daily=weathercode,temperature_2m_max,temperature_2m_min,sunrise,sunset&current_weather=true&timezone=auto&models=best_match&forecast_days={forecast_days}"
+OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={long}&hourly=temperature_2m,precipitation,precipitation_probability,relative_humidity_2m,surface_pressure,visibility&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&current_weather=true&timezone=auto&models=best_match&forecast_days={forecast_days}"
 OPEN_METEO_AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={long}&hourly=european_aqi,uv_index,uv_index_clear_sky&timezone=auto"
 OPEN_METEO_UNIT_PARAMS = {
     "standard": "temperature_unit=kelvin&wind_speed_unit=ms&precipitation_unit=mm",
@@ -90,8 +90,11 @@ class Weather(BasePlugin):
 
         timezone = device_config.get_config("timezone", default="America/New_York")
         time_format = device_config.get_config("time_format", default="12h")
+        if self.is_setting_enabled(settings, "use24hTime", False):
+            time_format = "24h"
         tz = pytz.timezone(timezone)
 
+        data_tz = tz
         try:
             if weather_provider == "OpenWeatherMap":
                 api_key = device_config.load_env_key("OPEN_WEATHER_MAP_SECRET")
@@ -104,6 +107,7 @@ class Weather(BasePlugin):
                 if settings.get('weatherTimeZone', 'locationTimeZone') == 'locationTimeZone':
                     logger.info("Using location timezone for OpenWeatherMap data.")
                     wtz = self.parse_timezone(weather_data)
+                    data_tz = wtz
                     template_params = self.parse_weather_data(
                         weather_data,
                         aqi_data,
@@ -158,12 +162,18 @@ class Weather(BasePlugin):
         template_params["plugin_settings"] = settings
 
         # Add last refresh time
-        now = datetime.now(tz)
-        if time_format == "24h":
-            last_refresh_time = now.strftime("%Y-%m-%d %H:%M")
+        now = datetime.now(data_tz)
+        show_time = self.is_setting_enabled(settings, "displayRefreshTime", True)
+        date_prefix = f"{now.strftime('%A')}, {now.strftime('%B')} {now.day}"
+        if show_time:
+            if time_format == "24h":
+                current_time = now.strftime("%H:%M")
+            else:
+                current_time = now.strftime("%I:%M %p").lstrip("0")
+            current_date = f"{date_prefix} {current_time}"
         else:
-            last_refresh_time = now.strftime("%Y-%m-%d %I:%M %p")
-        template_params["last_refresh_time"] = last_refresh_time
+            current_date = date_prefix
+        template_params["current_date"] = current_date
 
         image = self.render_image(dimensions, "weather.html", "weather.css", template_params)
 
@@ -381,6 +391,7 @@ class Weather(BasePlugin):
                     "day": day_label,
                     "high": int(day["temp"]["max"]),
                     "low": int(day["temp"]["min"]),
+                    "precip_prob": int(round(day.get("pop", 0) * 100)) if day.get("pop") is not None else None,
                     "icon": weather_icon_path,
                     "moon_phase_pct": moon_pct,
                     "moon_phase_icon": moon_icon_path,
@@ -397,11 +408,16 @@ class Weather(BasePlugin):
         weather_codes = daily_data.get('weathercode', [])
         temp_max = daily_data.get('temperature_2m_max', [])
         temp_min = daily_data.get('temperature_2m_min', [])
+        precip_prob_max = daily_data.get('precipitation_probability_max', [])
 
         forecast = []
 
-        for i in range(0, len(times)): 
-            dt = datetime.fromisoformat(times[i]).replace(tzinfo=timezone.utc).astimezone(tz)
+        for i in range(0, len(times)):
+            dt = datetime.fromisoformat(times[i])
+            if dt.tzinfo is None:
+                dt = tz.localize(dt)
+            else:
+                dt = dt.astimezone(tz)
             day_label = dt.strftime("%a")
 
             code = weather_codes[i] if i < len(weather_codes) else 0
@@ -427,6 +443,7 @@ class Weather(BasePlugin):
                 "day": day_label,
                 "high": int(temp_max[i]) if i < len(temp_max) else 0,
                 "low": int(temp_min[i]) if i < len(temp_min) else 0,
+                "precip_prob": int(precip_prob_max[i]) if i < len(precip_prob_max) else None,
                 "icon": weather_icon_path,
                 "moon_phase_pct": f"{illum_pct:.0f}",
                 "moon_phase_icon": moon_icon_path

@@ -7,6 +7,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (!imageContainer || !img) return;
 
+    const closeModal = function() {
+        if (!modalOverlay) return;
+        if (observer) {
+            observer.disconnect();
+            observer = null;
+        }
+        modalOverlay.remove();
+        modalOverlay = null;
+        modalImg = null;
+        imageContainer.classList.remove('maximized');
+        document.body.style.overflow = '';
+    };
+
     // Handle click on image to show modal
     img.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -38,15 +51,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle click on overlay to close modal
     document.addEventListener('click', function(e) {
         if (imageContainer.classList.contains('maximized') && modalOverlay && !img.contains(e.target)) {
-            if (observer) {
-                observer.disconnect();
-                observer = null;
-            }
-            modalOverlay.remove();
-            modalOverlay = null;
-            modalImg = null;
-            imageContainer.classList.remove('maximized');
-            document.body.style.overflow = '';
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && imageContainer.classList.contains('maximized')) {
+            closeModal();
         }
     });
 });

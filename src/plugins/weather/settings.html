@@ -1,8 +1,20 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-<div class="form-group">
-    <label class="form-label">Location: </label>
+<style>
+    .settings-section {
+        margin-top: 12px;
+    }
+
+    .section-title {
+        font-weight: bold;
+        margin: 6px 0;
+        color: var(--text-primary);
+    }
+</style>
+
+<div class="settings-section">
+    <div class="section-title">Location</div>
     <div class="form-group">
         <span>Latitude </span>
         <input readonly type="text" id="latitude" name="latitude" class="form-input" />
@@ -14,24 +26,29 @@
     <button type="button" id="openMap" class="action-button compact">Select Location</button>
 </div>
 
-<div class="form-group">
-    <label for="weatherProvider" class="form-label">Weather Provider:</label>
-    <select id="weatherProvider" name="weatherProvider" class="form-input" onchange="updateTitleOptions(this.value)">
-        <option value="OpenMeteo">Open-Meteo</option>
-        <option value="OpenWeatherMap">OpenWeatherMap</option>
-    </select>
+<div class="separator"></div>
 
-    <label for="units" class="form-label">Units:</label>
-    <select id="units" name="units" class="form-input">
-        <option value="imperial">Imperial (°F)</option>
-        <option value="metric">Metric (°C)</option>
-        <option value="standard">Standard (K)</option>
-    </select>
+<div class="settings-section">
+    <div class="section-title">Provider & Units</div>
+    <div class="form-group">
+        <label for="weatherProvider" class="form-label">Weather Provider:</label>
+        <select id="weatherProvider" name="weatherProvider" class="form-input" onchange="updateTitleOptions(this.value)">
+            <option value="OpenMeteo">Open-Meteo</option>
+            <option value="OpenWeatherMap">OpenWeatherMap</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="units" class="form-label">Units:</label>
+        <select id="units" name="units" class="form-input">
+            <option value="imperial">Imperial (°F)</option>
+            <option value="metric">Metric (°C)</option>
+            <option value="standard">Standard (K)</option>
+        </select>
+    </div>
 </div>
 
-<div class="form-group" id="titleOptionWrapper">
-    <label class="form-label">Title:</label>
-
+<div class="settings-section" id="titleOptionWrapper">
+    <div class="section-title">Title</div>
     <div class="form-group">
         <input type="radio" id="title-location" name="titleSelection" value="location">
         <label for="title-location">Location</label>
@@ -45,74 +62,74 @@
     </div>
 </div>
 
-<div class="form-group">
-    <label for="displayMetrics" class="form-label">Display: </label>
-
+<div class="settings-section">
+    <div class="section-title">Display</div>
     <div class="form-group">
-      <input type="checkbox" id="displayRefreshTime" name="displayRefreshTime" onclick="this.value=this.checked ? 'true' : 'false';">
-      <span>Refresh Time</span>
+        <input type="checkbox" id="displayRefreshTime" name="displayRefreshTime" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Last Updated Time</span>
     </div>
-
     <div class="form-group">
-        <input type="checkbox" id="displayMetrics" name="displayMetrics" onclick="this.value=this.checked ? 'true' : 'false'; toggleMetricOptions(this.checked);">
-        <span>Metrics</span>
+        <input type="checkbox" id="displayMetricIcons" name="displayMetricIcons" onclick="this.value=this.checked ? 'true' : 'false';">
+        <input type="hidden" name="displayMetricIcons" value="false">
+        <span>Metric Icons</span>
     </div>
-
     <div class="form-group">
-        <input type="checkbox" id="displayMetricSunrise" name="displayMetricSunrise" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>Sunrise</span>
+        <input type="checkbox" id="displayForecastIcons" name="displayForecastIcons" onclick="this.value=this.checked ? 'true' : 'false';">
+        <input type="hidden" name="displayForecastIcons" value="false">
+        <span>Forecast Icons</span>
     </div>
-
-    <div class="form-group">
-        <input type="checkbox" id="displayMetricSunset" name="displayMetricSunset" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>Sunset</span>
-    </div>
-
-    <div class="form-group">
-        <input type="checkbox" id="displayMetricWind" name="displayMetricWind" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>Wind</span>
-    </div>
-
-    <div class="form-group">
-        <input type="checkbox" id="displayMetricHumidity" name="displayMetricHumidity" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>Humidity</span>
-    </div>
-
-    <div class="form-group">
-        <input type="checkbox" id="displayMetricPressure" name="displayMetricPressure" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>Pressure</span>
-    </div>
-
-    <div class="form-group">
-        <input type="checkbox" id="displayMetricUvIndex" name="displayMetricUvIndex" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>UV Index</span>
-    </div>
-
-    <div class="form-group">
-        <input type="checkbox" id="displayMetricVisibility" name="displayMetricVisibility" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>Visibility</span>
-    </div>
-
-    <div class="form-group">
-        <input type="checkbox" id="displayMetricAirQuality" name="displayMetricAirQuality" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>Air Quality</span>
-    </div>
-
     <div class="form-group">
         <input type="checkbox" id="displayGraph" name="displayGraph" onclick="this.value=this.checked ? 'true' : 'false';">
         <span>Weather Graph</span>
     </div>
-
     <div class="form-group">
         <input type="checkbox" id="displayRain" name="displayRain" onclick="this.value=this.checked ? 'true' : 'false';">
         <span>Rain Amount</span>
     </div>
+</div>
 
+<div class="settings-section">
+    <div class="section-title">Metrics</div>
     <div class="form-group">
-        <input type="checkbox" id="moonPhase" name="moonPhase" onclick="this.value=this.checked ? 'true' : 'false';">
-        <span>Moon Phase</span>
+        <input type="checkbox" id="displayMetrics" name="displayMetrics" onclick="this.value=this.checked ? 'true' : 'false'; toggleMetricOptions(this.checked);">
+        <span>Metrics</span>
     </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricSunrise" name="displayMetricSunrise" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Sunrise</span>
+    </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricSunset" name="displayMetricSunset" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Sunset</span>
+    </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricWind" name="displayMetricWind" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Wind</span>
+    </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricHumidity" name="displayMetricHumidity" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Humidity</span>
+    </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricPressure" name="displayMetricPressure" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Pressure</span>
+    </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricUvIndex" name="displayMetricUvIndex" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>UV Index</span>
+    </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricVisibility" name="displayMetricVisibility" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Visibility</span>
+    </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayMetricAirQuality" name="displayMetricAirQuality" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Air Quality</span>
+    </div>
+</div>
 
+<div class="settings-section">
+    <div class="section-title">Forecast</div>
     <div class="form-group">
         <input type="checkbox" id="displayForecast" name="displayForecast" onclick="this.value=this.checked ? 'true' : 'false';">
         <span>Forecast</span>
@@ -123,7 +140,19 @@
         </select>
         <span>days</span>
     </div>
+    <div class="form-group">
+        <input type="checkbox" id="displayForecastPrecip" name="displayForecastPrecip" onclick="this.value=this.checked ? 'true' : 'false';">
+        <input type="hidden" name="displayForecastPrecip" value="false">
+        <span>Forecast Precipitation</span>
+    </div>
+    <div class="form-group">
+        <input type="checkbox" id="moonPhase" name="moonPhase" onclick="this.value=this.checked ? 'true' : 'false';">
+        <span>Moon Phase</span>
+    </div>
+</div>
 
+<div class="settings-section">
+    <div class="section-title">Time Zone</div>
     <div class="form-group">
         <label for="weatherTimeZone" class="form-label">Time Zone:</label>
         <select id="weatherTimeZone" name="weatherTimeZone" class="form-input">
@@ -131,7 +160,11 @@
             <option value="localTimeZone">Use Local Time Zone</option>
         </select>
     </div>
-
+    <div class="form-group">
+        <input type="checkbox" id="use24hTime" name="use24hTime" onclick="this.value=this.checked ? 'true' : 'false';">
+        <input type="hidden" name="use24hTime" value="false">
+        <span>Use 24-hour time</span>
+    </div>
 </div>
 
 <div id="mapModal" class="modal">
@@ -222,6 +255,109 @@
         });
     }
 
+    const SETTINGS_COOKIE_NAME = 'weatherSettingsCache';
+    const SETTINGS_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+
+    function setCookie(name, value, maxAgeSeconds) {
+        document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${maxAgeSeconds}; path=/`;
+    }
+
+    function getCookie(name) {
+        const prefix = `${name}=`;
+        const cookie = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith(prefix));
+        return cookie ? cookie.substring(prefix.length) : '';
+    }
+
+    function readCachedSettings() {
+        const raw = getCookie(SETTINGS_COOKIE_NAME);
+        if (!raw) return null;
+        try {
+            return JSON.parse(decodeURIComponent(raw));
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function setCheckbox(id, value) {
+        const checkbox = document.getElementById(id);
+        if (!checkbox) return;
+        const checked = value === true || value === "true";
+        checkbox.checked = checked;
+        checkbox.value = checked ? "true" : "false";
+    }
+
+    function collectWeatherSettings() {
+        const titleSelection = document.querySelector('input[name="titleSelection"]:checked')?.value;
+        return {
+            latitude: document.getElementById('latitude')?.value ?? '',
+            longitude: document.getElementById('longitude')?.value ?? '',
+            weatherProvider: document.getElementById('weatherProvider')?.value ?? 'OpenMeteo',
+            units: document.getElementById('units')?.value ?? 'imperial',
+            titleSelection: titleSelection ?? 'location',
+            customTitle: document.getElementById('customTitle')?.value ?? '',
+            displayRefreshTime: document.getElementById('displayRefreshTime')?.checked ?? true,
+            displayMetricIcons: document.getElementById('displayMetricIcons')?.checked ?? true,
+            displayForecastIcons: document.getElementById('displayForecastIcons')?.checked ?? true,
+            displayGraph: document.getElementById('displayGraph')?.checked ?? true,
+            displayRain: document.getElementById('displayRain')?.checked ?? false,
+            displayMetrics: document.getElementById('displayMetrics')?.checked ?? true,
+            displayMetricSunrise: document.getElementById('displayMetricSunrise')?.checked ?? true,
+            displayMetricSunset: document.getElementById('displayMetricSunset')?.checked ?? true,
+            displayMetricWind: document.getElementById('displayMetricWind')?.checked ?? true,
+            displayMetricHumidity: document.getElementById('displayMetricHumidity')?.checked ?? true,
+            displayMetricPressure: document.getElementById('displayMetricPressure')?.checked ?? true,
+            displayMetricUvIndex: document.getElementById('displayMetricUvIndex')?.checked ?? true,
+            displayMetricVisibility: document.getElementById('displayMetricVisibility')?.checked ?? true,
+            displayMetricAirQuality: document.getElementById('displayMetricAirQuality')?.checked ?? true,
+            displayForecast: document.getElementById('displayForecast')?.checked ?? true,
+            forecastDays: document.getElementById('forecastDays')?.value ?? '7',
+            displayForecastPrecip: document.getElementById('displayForecastPrecip')?.checked ?? false,
+            moonPhase: document.getElementById('moonPhase')?.checked ?? false,
+            weatherTimeZone: document.getElementById('weatherTimeZone')?.value ?? 'locationTimeZone',
+            use24hTime: document.getElementById('use24hTime')?.checked ?? false
+        };
+    }
+
+    function saveCachedSettings() {
+        const settings = collectWeatherSettings();
+        setCookie(SETTINGS_COOKIE_NAME, JSON.stringify(settings), SETTINGS_COOKIE_MAX_AGE);
+    }
+
+    function applyCachedSettings(settings) {
+        if (!settings) return;
+        if (settings.latitude !== undefined) document.getElementById('latitude').value = settings.latitude;
+        if (settings.longitude !== undefined) document.getElementById('longitude').value = settings.longitude;
+        if (settings.weatherProvider) document.getElementById('weatherProvider').value = settings.weatherProvider;
+        if (settings.units) document.getElementById('units').value = settings.units;
+        if (settings.titleSelection) {
+            const radio = document.querySelector(`input[name="titleSelection"][value="${settings.titleSelection}"]`);
+            if (radio) radio.checked = true;
+        }
+        if (settings.customTitle !== undefined) document.getElementById('customTitle').value = settings.customTitle;
+        setCheckbox('displayRefreshTime', settings.displayRefreshTime);
+        setCheckbox('displayMetricIcons', settings.displayMetricIcons);
+        setCheckbox('displayForecastIcons', settings.displayForecastIcons);
+        setCheckbox('displayGraph', settings.displayGraph);
+        setCheckbox('displayRain', settings.displayRain);
+        setCheckbox('displayMetrics', settings.displayMetrics);
+        setCheckbox('displayMetricSunrise', settings.displayMetricSunrise);
+        setCheckbox('displayMetricSunset', settings.displayMetricSunset);
+        setCheckbox('displayMetricWind', settings.displayMetricWind);
+        setCheckbox('displayMetricHumidity', settings.displayMetricHumidity);
+        setCheckbox('displayMetricPressure', settings.displayMetricPressure);
+        setCheckbox('displayMetricUvIndex', settings.displayMetricUvIndex);
+        setCheckbox('displayMetricVisibility', settings.displayMetricVisibility);
+        setCheckbox('displayMetricAirQuality', settings.displayMetricAirQuality);
+        setCheckbox('displayForecast', settings.displayForecast);
+        setCheckbox('displayForecastPrecip', settings.displayForecastPrecip);
+        setCheckbox('moonPhase', settings.moonPhase);
+        if (settings.forecastDays) document.getElementById('forecastDays').value = settings.forecastDays;
+        if (settings.weatherTimeZone) document.getElementById('weatherTimeZone').value = settings.weatherTimeZone;
+        setCheckbox('use24hTime', settings.use24hTime);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
 
         const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -284,6 +420,7 @@
             $latitude.value = position.lat;
             $longitude.value = position.lng;
             closeModal('mapModal');
+            saveCachedSettings();
         });
 
         if (loadPluginSettings) {
@@ -294,6 +431,17 @@
 
             document.getElementById('displayRefreshTime').checked = pluginSettings.displayRefreshTime;
             document.getElementById('displayRefreshTime').value = pluginSettings.displayRefreshTime;
+
+            const legacyIconsValue = pluginSettings.displayIcons;
+            const displayMetricIconsValue = pluginSettings.displayMetricIcons ?? legacyIconsValue ?? "true";
+            const displayMetricIconsChecked = displayMetricIconsValue === true || displayMetricIconsValue === "true";
+            document.getElementById('displayMetricIcons').checked = displayMetricIconsChecked;
+            document.getElementById('displayMetricIcons').value = displayMetricIconsChecked ? "true" : "false";
+
+            const displayForecastIconsValue = pluginSettings.displayForecastIcons ?? legacyIconsValue ?? "true";
+            const displayForecastIconsChecked = displayForecastIconsValue === true || displayForecastIconsValue === "true";
+            document.getElementById('displayForecastIcons').checked = displayForecastIconsChecked;
+            document.getElementById('displayForecastIcons').value = displayForecastIconsChecked ? "true" : "false";
 
             document.getElementById('displayMetrics').checked = pluginSettings.displayMetrics;
             document.getElementById('displayMetrics').value = pluginSettings.displayMetrics;
@@ -309,10 +457,19 @@
 
             document.getElementById('forecastDays').value = pluginSettings.forecastDays;
 
+            const displayForecastPrecipValue = pluginSettings.displayForecastPrecip ?? "false";
+            const displayForecastPrecipChecked = displayForecastPrecipValue === true || displayForecastPrecipValue === "true";
+            document.getElementById('displayForecastPrecip').checked = displayForecastPrecipChecked;
+            document.getElementById('displayForecastPrecip').value = displayForecastPrecipChecked ? "true" : "false";
+
             document.getElementById('moonPhase').checked = pluginSettings.moonPhase;
             document.getElementById('moonPhase').value = pluginSettings.moonPhase;
 
             document.getElementById('weatherTimeZone').value = pluginSettings.weatherTimeZone;
+            const use24hTimeValue = pluginSettings.use24hTime ?? "false";
+            const use24hTimeChecked = use24hTimeValue === true || use24hTimeValue === "true";
+            document.getElementById('use24hTime').checked = use24hTimeChecked;
+            document.getElementById('use24hTime').value = use24hTimeChecked ? "true" : "false";
 
             applyMetricSettings(true);
             
@@ -325,6 +482,10 @@
             document.getElementById('units').value = "imperial";
             document.getElementById('displayRefreshTime').checked = true;
             document.getElementById('displayRefreshTime').value = "true";
+            document.getElementById('displayMetricIcons').checked = true;
+            document.getElementById('displayMetricIcons').value = "true";
+            document.getElementById('displayForecastIcons').checked = true;
+            document.getElementById('displayForecastIcons').value = "true";
             document.getElementById('displayMetrics').checked = true;
             document.getElementById('displayMetrics').value = "true";
             document.getElementById('displayGraph').checked = true;
@@ -334,8 +495,12 @@
             document.getElementById('displayForecast').checked = true;
             document.getElementById('displayForecast').value = "true";
             document.getElementById('forecastDays').value = 7;
+            document.getElementById('displayForecastPrecip').checked = false;
+            document.getElementById('displayForecastPrecip').value = "false";
             document.getElementById('moonPhase').checked = false;
             document.getElementById('weatherTimeZone').value = "locationTimeZone";
+            document.getElementById('use24hTime').checked = false;
+            document.getElementById('use24hTime').value = "false";
             if (weatherDefaults.latitude !== undefined) {
                 document.getElementById('latitude').value = weatherDefaults.latitude;
             }
@@ -351,13 +516,58 @@
             applyMetricSettings(false);
         }
 
+        const cachedSettings = !loadPluginSettings ? readCachedSettings() : null;
+        if (cachedSettings) {
+            applyCachedSettings(cachedSettings);
+            selectedTitle = cachedSettings.titleSelection ?? selectedTitle;
+            weatherProvider = cachedSettings.weatherProvider ?? weatherProvider;
+        }
+
         document.getElementById('weatherProvider').value = weatherProvider;
         document.querySelector(`input[name="titleSelection"][value="${selectedTitle}"]`).checked = true;
         document.querySelectorAll('input[name="titleSelection"]').forEach((radio) => {
-            radio.addEventListener('change', updateTitleInputState);
+            radio.addEventListener('change', () => {
+                updateTitleInputState();
+                saveCachedSettings();
+            });
         });
         updateTitleOptions(weatherProvider)
         toggleMetricOptions(document.getElementById('displayMetrics').checked);
         updateTitleInputState();
+
+        const cacheFields = [
+            'weatherProvider',
+            'units',
+            'customTitle',
+            'displayRefreshTime',
+            'displayMetricIcons',
+            'displayForecastIcons',
+            'displayGraph',
+            'displayRain',
+            'displayMetrics',
+            'displayMetricSunrise',
+            'displayMetricSunset',
+            'displayMetricWind',
+            'displayMetricHumidity',
+            'displayMetricPressure',
+            'displayMetricUvIndex',
+            'displayMetricVisibility',
+            'displayMetricAirQuality',
+            'displayForecast',
+            'forecastDays',
+            'displayForecastPrecip',
+            'moonPhase',
+            'weatherTimeZone',
+            'use24hTime'
+        ];
+        cacheFields.forEach((id) => {
+            const element = document.getElementById(id);
+            if (!element) return;
+            element.addEventListener('change', saveCachedSettings);
+        });
+        const customTitleInput = document.getElementById('customTitle');
+        if (customTitleInput) {
+            customTitleInput.addEventListener('input', saveCachedSettings);
+        }
     });
 </script>
