@@ -222,7 +222,7 @@
   font-size: min(3.3dvh, 2.75vw);
 }
 
-.low .high {
+.low .high .precip {
   font-weight: normal;
 }
 

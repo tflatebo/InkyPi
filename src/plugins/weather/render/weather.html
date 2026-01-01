@@ -79,7 +79,8 @@
           <span class="high">{{ day.high }}{% if units != "standard" %}°{% endif %}</span> /
           <span class="low">{{ day.low }}{% if units != "standard" %}°{% endif %}</span>
           {% if plugin_settings.displayForecastPrecip == "true" and day.precip_prob is not none %}
-          /<span class="precip">{{ day.precip_prob }}%</span>
+          /
+          <span class="precip">{{ day.precip_prob }}%</span>
           {% endif %}
         </div>
         {% if plugin_settings.moonPhase and plugin_settings.moonPhase == "true" %}
