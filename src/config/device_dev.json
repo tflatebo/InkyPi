@@ -25,8 +25,8 @@
         "active_playlist": null
     },
     "refresh_info": {
-        "refresh_time": "2025-12-31T23:18:20.735409+00:00",
-        "image_hash": "0c5e0aaa9559f8b812998d006dc709f510856d2e49fc6f3a6ffe25a0c0636a6e",
+        "refresh_time": "2026-01-01T20:06:58.581035+00:00",
+        "image_hash": "ce72c7fef96c29c30b707bd41c36a0084301edc53b3d15b96f39ed8c27e93603",
         "refresh_type": "Manual Update",
         "plugin_id": "weather"
     }
