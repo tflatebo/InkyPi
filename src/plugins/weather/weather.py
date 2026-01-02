@@ -148,6 +148,7 @@ class Weather(BasePlugin):
                 template_params.get("data_points", []),
                 settings
             )
+            self.apply_weather_overrides(template_params, device_config)
             if title_selection == 'none':
                 title = ''
             template_params['title'] = title
@@ -820,3 +821,437 @@ class Weather(BasePlugin):
         else:
             logger.error("Failed to retrieve Timezone from weather data")
             raise RuntimeError("Timezone not found in weather data.")
+
+    def apply_weather_overrides(self, template_params, device_config):
+        overrides = self.load_weather_overrides(device_config)
+        if not overrides:
+            return
+        display_units = template_params.get("units", "imperial")
+        cache = {}
+
+        if self.should_log_weather_sources(device_config):
+            logger.info(
+                "Weather provider values (pre-override): temp=%s%s feels_like=%s%s humidity=%s wind=%s%s",
+                template_params.get("current_temperature"),
+                template_params.get("temperature_unit", ""),
+                template_params.get("feels_like"),
+                template_params.get("temperature_unit", ""),
+                self.get_data_point_measurement(template_params.get("data_points", []), "Humidity"),
+                self.get_data_point_measurement(template_params.get("data_points", []), "Wind"),
+                UNITS.get(display_units, {}).get("speed", ""),
+            )
+
+        temp_display, temp_f = self.get_temperature_override(
+            overrides.get("current_temperature"),
+            device_config,
+            cache,
+            display_units,
+            "current_temperature",
+        )
+        humidity = self.get_humidity_override(
+            overrides.get("current_humidity"),
+            device_config,
+            cache,
+            "current_humidity",
+        )
+        wind_display, wind_mph = self.get_wind_override(
+            overrides.get("current_wind_speed"),
+            device_config,
+            cache,
+            display_units,
+            "current_wind_speed",
+        )
+
+        if temp_display is not None:
+            template_params["current_temperature"] = self.coerce_temperature(temp_display)
+
+        if humidity is not None:
+            self.update_data_point_measurement(
+                template_params.get("data_points", []),
+                "Humidity",
+                humidity,
+            )
+
+        if wind_display is not None:
+            self.update_data_point_measurement(
+                template_params.get("data_points", []),
+                "Wind",
+                wind_display,
+            )
+
+        feels_like, feels_like_method = self.compute_feels_like(temp_f, humidity, wind_mph)
+        if feels_like is not None:
+            feels_like_display = self.convert_temperature_from_f(feels_like, display_units)
+            template_params["feels_like"] = self.coerce_temperature(feels_like_display)
+            if self.should_log_weather_sources(device_config):
+                logger.info(
+                    "Computed feels_like using %s: temp_f=%s humidity=%s wind_mph=%s -> feels_like_f=%s",
+                    feels_like_method,
+                    temp_f,
+                    humidity,
+                    wind_mph,
+                    feels_like,
+                )
+
+        resolved = self.resolve_override_values(overrides, device_config)
+        if resolved:
+            data_point_map = {
+                "current_pressure": "Pressure",
+                "current_uv_index": "UV Index",
+                "current_visibility": "Visibility",
+                "current_air_quality": "Air Quality",
+            }
+            for key, label in data_point_map.items():
+                if key in resolved:
+                    self.update_data_point_measurement(
+                        template_params.get("data_points", []),
+                        label,
+                        resolved[key],
+                    )
+            if feels_like is None and "feels_like" in resolved:
+                template_params["feels_like"] = self.coerce_temperature(resolved["feels_like"])
+
+        if self.should_log_weather_sources(device_config):
+            logger.info(
+                "Weather values (post-override): temp=%s%s feels_like=%s%s humidity=%s wind=%s%s",
+                template_params.get("current_temperature"),
+                template_params.get("temperature_unit", ""),
+                template_params.get("feels_like"),
+                template_params.get("temperature_unit", ""),
+                self.get_data_point_measurement(template_params.get("data_points", []), "Humidity"),
+                self.get_data_point_measurement(template_params.get("data_points", []), "Wind"),
+                UNITS.get(display_units, {}).get("speed", ""),
+            )
+
+    def load_weather_overrides(self, device_config):
+        weather_secrets = self.get_weather_secrets(device_config)
+        overrides = weather_secrets.get("overrides", {})
+        if not overrides:
+            return {}
+        if not isinstance(overrides, dict):
+            logger.warning("weather overrides must be a mapping in secrets.yaml.")
+            return {}
+        return overrides
+
+    def resolve_override_values(self, overrides, device_config):
+        resolved = {}
+        cache = {}
+        for key, override in overrides.items():
+            value = self.resolve_override_value(override, device_config, cache)
+            if value is not None:
+                resolved[key] = value
+        return resolved
+
+    def resolve_override_value(self, override, device_config, cache):
+        if not isinstance(override, dict):
+            return override
+
+        if "value" in override:
+            return override.get("value")
+
+        source = override.get("source")
+        if source != "home_assistant":
+            logger.warning("Unsupported override source: %s", source)
+            return None
+
+        entity_id = override.get("entity_id")
+        if not entity_id:
+            logger.warning("Home Assistant override missing entity_id.")
+            return None
+
+        ha_config = self.get_home_assistant_config(device_config)
+        if not ha_config:
+            return None
+
+        base_url = ha_config.get("base_url")
+        token = ha_config.get("token")
+        if not base_url or not token:
+            logger.warning("Home Assistant base_url or token not configured.")
+            return None
+
+        if entity_id not in cache:
+            cache[entity_id] = self.fetch_home_assistant_state(
+                base_url,
+                token,
+                entity_id,
+            )
+
+        entity_data = cache.get(entity_id)
+        if not entity_data:
+            return None
+
+        attribute = override.get("attribute")
+        if attribute:
+            return entity_data.get("attributes", {}).get(attribute)
+        return entity_data.get("state")
+
+    def get_home_assistant_config(self, device_config):
+        weather_secrets = self.get_weather_secrets(device_config)
+        ha_config = weather_secrets.get("home_assistant", {})
+        if not ha_config:
+            logger.debug("Home Assistant config not found in secrets.")
+            return {}
+        if not isinstance(ha_config, dict):
+            logger.warning("weather.home_assistant must be a mapping in secrets.yaml.")
+            return {}
+        return ha_config
+
+    def get_weather_secrets(self, device_config):
+        secrets = device_config.get_secrets()
+        if not secrets:
+            return {}
+        plugins = secrets.get("plugins", {})
+        if not isinstance(plugins, dict):
+            logger.warning("plugins must be a mapping in secrets.yaml.")
+            return {}
+        weather = plugins.get("weather", {})
+        if not isinstance(weather, dict):
+            logger.warning("plugins.weather must be a mapping in secrets.yaml.")
+            return {}
+        return weather
+
+    def get_temperature_override(self, override, device_config, cache, display_units, key_name):
+        if override is None:
+            return None, None
+        value, unit = self.get_override_value_and_unit(
+            override,
+            device_config,
+            cache,
+            key_name,
+        )
+        if value is None:
+            return None, None
+        display_value = self.convert_temperature(value, unit, display_units)
+        temp_f = self.convert_temperature(value, unit, "imperial")
+        return display_value, temp_f
+
+    def get_wind_override(self, override, device_config, cache, display_units, key_name):
+        if override is None:
+            return None, None
+        value, unit = self.get_override_value_and_unit(
+            override,
+            device_config,
+            cache,
+            key_name,
+        )
+        if value is None:
+            return None, None
+        display_value = self.convert_wind_speed(value, unit, display_units)
+        wind_mph = self.convert_wind_speed(value, unit, "imperial")
+        return display_value, wind_mph
+
+    def get_humidity_override(self, override, device_config, cache, key_name):
+        if override is None:
+            return None
+        value, unit = self.get_override_value_and_unit(
+            override,
+            device_config,
+            cache,
+            key_name,
+        )
+        if value is None:
+            return None
+        if unit and "%" not in str(unit):
+            return value
+        return self.coerce_numeric(value)
+
+    def get_override_value_and_unit(self, override, device_config, cache, key_name):
+        if not isinstance(override, dict):
+            return self.coerce_numeric(override), None
+
+        if "value" in override:
+            return self.coerce_numeric(override.get("value")), None
+
+        source = override.get("source")
+        if source != "home_assistant":
+            logger.warning("Unsupported override source: %s", source)
+            return None, None
+
+        entity_id = override.get("entity_id")
+        if not entity_id:
+            logger.warning("Home Assistant override missing entity_id.")
+            return None, None
+
+        ha_config = self.get_home_assistant_config(device_config)
+        if not ha_config:
+            return None, None
+
+        base_url = ha_config.get("base_url")
+        token = ha_config.get("token")
+        if not base_url or not token:
+            logger.warning("Home Assistant base_url or token not configured.")
+            return None, None
+
+        if entity_id not in cache:
+            cache[entity_id] = self.fetch_home_assistant_state(
+                base_url,
+                token,
+                entity_id,
+            )
+
+        entity_data = cache.get(entity_id)
+        if not entity_data:
+            return None, None
+
+        attribute = override.get("attribute")
+        if attribute:
+            value = entity_data.get("attributes", {}).get(attribute)
+        else:
+            value = entity_data.get("state")
+
+        unit = entity_data.get("attributes", {}).get("unit_of_measurement")
+        if self.should_log_weather_sources(device_config):
+            logger.info(
+                "Weather override %s from HA entity %s: value=%s unit=%s",
+                key_name,
+                entity_id,
+                value,
+                unit,
+            )
+        return self.coerce_numeric(value), unit
+
+    def compute_feels_like(self, temp_f, humidity, wind_mph):
+        if temp_f is None:
+            return None, "none"
+
+        if temp_f <= 50 and wind_mph is not None and wind_mph > 3:
+            wind_factor = wind_mph ** 0.16
+            value = 35.74 + (0.6215 * temp_f) - (35.75 * wind_factor) + (0.4275 * temp_f * wind_factor)
+            return value, "wind_chill"
+
+        if temp_f >= 80 and humidity is not None:
+            rh = humidity
+            hi = (
+                -42.379
+                + 2.04901523 * temp_f
+                + 10.14333127 * rh
+                - 0.22475541 * temp_f * rh
+                - 0.00683783 * temp_f * temp_f
+                - 0.05481717 * rh * rh
+                + 0.00122874 * temp_f * temp_f * rh
+                + 0.00085282 * temp_f * rh * rh
+                - 0.00000199 * temp_f * temp_f * rh * rh
+            )
+            if rh < 13 and 80 <= temp_f <= 112:
+                adjustment = ((13 - rh) / 4) * math.sqrt((17 - abs(temp_f - 95)) / 17)
+                hi -= adjustment
+            elif rh > 85 and 80 <= temp_f <= 87:
+                adjustment = ((rh - 85) / 10) * ((87 - temp_f) / 5)
+                hi += adjustment
+            return hi, "heat_index"
+
+        return temp_f, "temperature"
+
+    def convert_temperature(self, value, from_unit, to_units):
+        if value is None:
+            return None
+        if from_unit is None:
+            from_unit = self.display_units_to_temp_unit(to_units)
+        unit = str(from_unit).strip().lower()
+        if unit in ["°f", "f", "degf", "fahrenheit"]:
+            temp_f = float(value)
+        elif unit in ["°c", "c", "degc", "celsius"]:
+            temp_f = (float(value) * 9 / 5) + 32
+        elif unit in ["k", "kelvin"]:
+            temp_f = (float(value) - 273.15) * 9 / 5 + 32
+        else:
+            temp_f = float(value)
+
+        if to_units == "imperial":
+            return temp_f
+        if to_units == "metric":
+            return (temp_f - 32) * 5 / 9
+        if to_units == "standard":
+            return ((temp_f - 32) * 5 / 9) + 273.15
+        return temp_f
+
+    def convert_temperature_from_f(self, temp_f, to_units):
+        return self.convert_temperature(temp_f, "F", to_units)
+
+    def display_units_to_temp_unit(self, units):
+        if units == "metric":
+            return "C"
+        if units == "standard":
+            return "K"
+        return "F"
+
+    def convert_wind_speed(self, value, from_unit, to_units):
+        if value is None:
+            return None
+        if from_unit is None:
+            from_unit = self.display_units_to_wind_unit(to_units)
+        unit = str(from_unit).strip().lower()
+        if unit in ["mph"]:
+            mph = float(value)
+        elif unit in ["m/s", "mps", "meter/s", "meters/s"]:
+            mph = float(value) * 2.236936
+        elif unit in ["km/h", "kph", "kmh"]:
+            mph = float(value) * 0.621371
+        elif unit in ["kt", "kts", "kn", "knot", "knots"]:
+            mph = float(value) * 1.15078
+        else:
+            mph = float(value)
+
+        if to_units == "imperial":
+            return mph
+        return mph / 2.236936
+
+    def display_units_to_wind_unit(self, units):
+        if units == "imperial":
+            return "mph"
+        return "m/s"
+
+    def should_log_weather_sources(self, device_config):
+        return getattr(device_config, "is_dev_mode", lambda: False)()
+
+    def get_data_point_measurement(self, data_points, label):
+        for data_point in data_points:
+            if data_point.get("label") == label:
+                return data_point.get("measurement")
+        return None
+
+    def fetch_home_assistant_state(self, base_url, token, entity_id):
+        url = f"{base_url.rstrip('/')}/api/states/{entity_id}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+        except requests.RequestException as exc:
+            logger.warning("Home Assistant request failed: %s", exc)
+            return None
+        if not 200 <= response.status_code < 300:
+            logger.warning(
+                "Home Assistant request failed for %s: %s",
+                entity_id,
+                response.text,
+            )
+            return None
+        return response.json()
+
+    def update_data_point_measurement(self, data_points, label, value):
+        for data_point in data_points:
+            if data_point.get("label") == label:
+                data_point["measurement"] = self.coerce_numeric(value)
+                break
+
+    def coerce_numeric(self, value):
+        if value is None:
+            return value
+        if isinstance(value, (int, float)):
+            return int(value) if isinstance(value, float) and value.is_integer() else value
+        if isinstance(value, str):
+            stripped = value.strip()
+            try:
+                number = float(stripped)
+                return int(number) if number.is_integer() else number
+            except ValueError:
+                return value
+        return value
+
+    def coerce_temperature(self, value):
+        numeric = self.coerce_numeric(value)
+        if isinstance(numeric, (int, float)):
+            return str(round(numeric))
+        return str(numeric)

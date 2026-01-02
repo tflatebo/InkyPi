@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 class Config:
     # Base path for the project directory
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    PROJECT_DIR = os.path.dirname(BASE_DIR)
 
     # File paths relative to the script's directory
     config_file = os.path.join(BASE_DIR, "config", "device.json")
@@ -19,11 +20,15 @@ class Config:
     # Directory path for storing plugin instance images
     plugin_image_dir = os.path.join(BASE_DIR, "static", "images", "plugins")
 
+    # File path for secrets (ignored by git)
+    secrets_file = os.path.join(PROJECT_DIR, "config", "secrets.yaml")
+
     def __init__(self):
         self.config = self.read_config()
         self.plugins_list = self.read_plugins_list()
         self.playlist_manager = self.load_playlist_manager()
         self.refresh_info = self.load_refresh_info()
+        self.secrets = self.read_secrets()
 
     def read_config(self):
         """Reads the device config JSON file and returns it as a dictionary."""
@@ -52,6 +57,27 @@ class Config:
 
         return plugins_list
 
+    def read_secrets(self):
+        """Reads the optional secrets.yaml file and returns it as a dictionary."""
+        if not os.path.isfile(self.secrets_file):
+            logger.debug("Secrets file not found at %s", self.secrets_file)
+            return {}
+        try:
+            import yaml
+        except ImportError:
+            logger.warning("PyYAML is not installed; skipping secrets file.")
+            return {}
+        try:
+            with open(self.secrets_file) as f:
+                secrets = yaml.safe_load(f) or {}
+        except Exception as exc:
+            logger.warning("Failed to read secrets file: %s", exc)
+            return {}
+        if not isinstance(secrets, dict):
+            logger.warning("Secrets file must contain a top-level mapping.")
+            return {}
+        return secrets
+
     def write_config(self):
         """Updates the cached config from the model objects and writes to the config file."""
         logger.debug(f"Writing device config to {self.config_file}")
@@ -65,6 +91,14 @@ class Config:
         if key is not None:
             return self.config.get(key, default)
         return self.config
+
+    def get_secrets(self, key=None, default=None):
+        """Gets the value of a specific secrets key or returns the full secrets mapping."""
+        if key is None:
+            return self.secrets
+        if default is None:
+            default = {}
+        return self.secrets.get(key, default)
 
     def get_plugins(self):
         """Returns the list of plugin configurations."""
@@ -114,3 +148,7 @@ class Config:
     def get_refresh_info(self):
         """Returns the refresh information."""
         return self.refresh_info
+
+    def is_dev_mode(self):
+        """Returns True when running with the development config file."""
+        return os.path.basename(self.config_file) == "device_dev.json"

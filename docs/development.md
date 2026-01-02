@@ -58,6 +58,8 @@ python src/inkypi.py --dev --port 9090
 2. **Plugin development**: Copy an existing plugin as template (e.g., `clock/`)
 3. **Configuration**: Edit `src/config/device_dev.json` for display settings
 4. **Hot reload**: Restart server to see code changes
+5. **Secrets**: Copy `config/secrets.yaml.example` to `config/secrets.yaml` for local secrets like Home Assistant overrides (weather supports local data points and NWS-style "feels like").
+6. **Weather debugging**: In dev mode or via `scripts/generate_weather_image.py`, weather logs include data sources and computed values.
 
 ## Generate Weather Image Without the Server
 

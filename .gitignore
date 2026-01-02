@@ -135,6 +135,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+secrets.yaml
+secrets.yml
+config/secrets.yaml
+config/secrets.yml
 
 # Spyder project settings
 .spyderproject

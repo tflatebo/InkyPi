@@ -100,6 +100,34 @@ To update your InkyPi with the latest code changes, follow these steps:
     ```
 This process ensures that any new updates, including code changes and additional dependencies, are properly applied without requiring a full reinstallation.
 
+## Secrets and Local Weather Overrides
+
+InkyPi can load local secrets from `config/secrets.yaml` (see `config/secrets.yaml.example`).
+The weather plugin supports per-data-point overrides, including local Home Assistant sensors,
+and computes "feels like" locally using NWS heat index / wind chill when you supply:
+
+- `current_temperature`
+- `current_humidity`
+- `current_wind_speed`
+
+Example structure:
+
+```yaml
+plugins:
+  weather:
+    home_assistant:
+      base_url: "http://homeassistant.local:8123"
+      token: "YOUR_LONG_LIVED_ACCESS_TOKEN"
+    overrides:
+      current_temperature:
+        source: home_assistant
+        entity_id: sensor.outdoor_temperature
+```
+
+Notes:
+- Overrides are optional; any missing values fall back to the weather provider.
+- Units are taken from Home Assistant `unit_of_measurement` and converted to your display units.
+
 ## Uninstall
 To install InkyPi, simply run the following command:
 

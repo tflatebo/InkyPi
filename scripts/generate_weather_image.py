@@ -1,10 +1,13 @@
 import argparse
 import os
 import sys
+import logging.config
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(ROOT_DIR, "src")
 sys.path.insert(0, SRC_DIR)
+
+logging.config.fileConfig(os.path.join(SRC_DIR, "config", "logging.conf"))
 
 from config import Config
 from display.display_manager import DisplayManager
